@@ -19,9 +19,12 @@ client.on('connect', function () {
     measurements.temperature = Math.round(measurements.temperature * 100) / 100;
     measurements.humidity = Math.round(measurements.humidity * 100) / 100;
 
+    //LOG
+    // console.log('publish')
+    
     //publish the measurements
-    client.publish('/sensor1', JSON.stringify(measurements));
-  }, 10_000)
+    client.publish('/bkyz2-fmaaa-aaaaa-qaaaq-cai/sensor1', JSON.stringify(measurements));
+  }, 1_000)
 
   // client.subscribe('/#', function (err) {
   //   if (!err) {

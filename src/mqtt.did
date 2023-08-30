@@ -4,11 +4,18 @@ type Message = record {
   timestamp : nat64;
   index : nat64;
 };
-type Result = variant { Ok : vec Message; Err : text };
+type PagedResult = record {
+  total : nat64;
+  data : vec Message;
+  skip : nat64;
+  limit : nat64;
+};
+type Result = variant { Ok : PagedResult; Err : text };
 type Result_1 = variant { Ok : Settings; Err : text };
 type Result_2 = variant { Ok; Err : text };
 type Settings = record { interval : nat64; owner : principal };
 service : () -> {
+  getInMessages : (nat64) -> (Result) query;
   getMessages : (nat64) -> (Result) query;
   getSettings : () -> (Result_1) query;
   onMessage : (text, text) -> (Result_2);

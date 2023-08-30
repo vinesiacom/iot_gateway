@@ -12,6 +12,14 @@ pub struct Message {
     timestamp: u64,
 }
 
+#[derive(Clone, CandidType, Deserialize)]
+pub struct PagedResult {
+    skip: u64,
+    limit: u64,
+    total: u64,
+    data: Vec<Message>
+}
+
 pub struct MessageStore {
     messages: Vec<Message>,
 }
@@ -46,10 +54,11 @@ impl MessageStore {
 }
 
 thread_local! {
-    pub static MESSAGES: Rc<RefCell<MessageStore>> =  Rc::new(RefCell::new(MessageStore::new()));
+    pub static IN_MESSAGES: Rc<RefCell<MessageStore>> =  Rc::new(RefCell::new(MessageStore::new()));
+    pub static OUT_MESSAGES: Rc<RefCell<MessageStore>> =  Rc::new(RefCell::new(MessageStore::new()));
     pub static SETTINGS: Rc<RefCell<Settings>> =  Rc::new(RefCell::new(Settings {
         owner: Principal::anonymous(),
-        interval: 0,
+        interval: 1,
     }));
 }
 
@@ -68,11 +77,21 @@ fn init() {
 fn onMessage(topic: String, message: String)-> Result<(), String> {
     println!("{}: {}", topic, message);
 
-    MESSAGES.with(|m| {
+    IN_MESSAGES.with(|m| {
         let mut messages = m.borrow_mut();
         messages.add_message(&Message {
             index: 0,
             topic,
+            message: message.clone(),
+            timestamp: time() as u64,
+        });
+    });
+
+    OUT_MESSAGES.with(|m| {
+        let mut messages = m.borrow_mut();
+        messages.add_message(&Message {
+            index: 0,
+            topic: "/response".to_string(),
             message,
             timestamp: time() as u64,
         });
@@ -83,15 +102,39 @@ fn onMessage(topic: String, message: String)-> Result<(), String> {
 
 #[query]
 #[candid_method(query)]
-fn getMessages(index: u64)-> Result<Vec<Message>, String> {
-    MESSAGES.with(|m| {
+fn getMessages(index: u64)-> Result<PagedResult, String> {
+    OUT_MESSAGES.with(|m| {
         let messages = m.borrow();
         let msgs = messages.get_messages();
 
         //get all messages, skip fist index items
-        let msgs = msgs.iter().skip(index as usize).cloned().collect();
+        let msgs: Vec<Message>  = msgs.iter().skip(index as usize).take(100).cloned().collect();
 
-        Ok(msgs)
+        Ok(PagedResult {
+            skip: index,
+            limit: 100,
+            data: msgs.clone(),
+            total: msgs.len() as u64
+        })
+    })
+}
+
+#[query]
+#[candid_method(query)]
+fn getInMessages(index: u64)-> Result<PagedResult, String> {
+    IN_MESSAGES.with(|m| {
+        let messages = m.borrow();
+        let msgs = messages.get_messages();
+
+        //get all messages, skip fist index items
+        let msgs: Vec<Message> = msgs.iter().skip(index as usize).take(100).cloned().collect();
+
+        Ok(PagedResult {
+            skip: index,
+            limit: 100,
+            data: msgs.clone(),
+            total: msgs.len() as u64
+        })
     })
 }
 

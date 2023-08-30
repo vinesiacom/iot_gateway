@@ -4,9 +4,10 @@ const { Actor, HttpAgent } = require('@dfinity/agent');
 const { Principal } = require('@dfinity/principal');
 const { Ed25519KeyIdentity } = require('@dfinity/identity');
 
-const { idlFactory } = require('./.dfx/local/canisters/storage/storage.did.js')
+const { idlFactory } = require('./src/service.did.js')
 
 const fs = require('fs');
+
 var keyData = fs.readFileSync('./key.json', 'utf8');
 var key = Ed25519KeyIdentity.fromJSON(keyData);
 console.log("Loaded principal: " + key.getPrincipal().toString())
@@ -28,7 +29,6 @@ async function run() {
 
   console.log("Interval: " , settings.Ok.interval);
   console.log("Owner: " , settings.Ok.owner.toText());
-
 
   let items = await actor.getMessages(0n);
   console.log(items.Ok.length);
