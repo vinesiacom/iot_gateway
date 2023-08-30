@@ -1,0 +1,12 @@
+{
+    "canisters": {
+      "storage": {
+        "build": "./build.sh",
+        "candid": "src/mqtt.did",
+        "wasm": "target/wasm32-unknown-unknown/release/mqtt.wasm",
+        "type": "custom"
+      }
+    },
+    "dfx": "0.14.3",
+    "version": 1
+  }

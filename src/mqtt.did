@@ -1,0 +1,15 @@
+type Message = record {
+  topic : text;
+  message : text;
+  timestamp : nat64;
+  index : nat64;
+};
+type Result = variant { Ok : vec Message; Err : text };
+type Result_1 = variant { Ok : Settings; Err : text };
+type Result_2 = variant { Ok; Err : text };
+type Settings = record { interval : nat64; owner : principal };
+service : () -> {
+  getMessages : (nat64) -> (Result) query;
+  getSettings : () -> (Result_1) query;
+  onMessage : (text, text) -> (Result_2);
+}
