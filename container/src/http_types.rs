@@ -1,6 +1,5 @@
 //Taken from https://github.com/dfinity/ic/blob/1c7f774ae0c096d98f873fa66f1d200b85a64ecf/rs/rust_canisters/http_types/src/lib.rs
 
-
 use candid::{CandidType, Deserialize};
 use serde_bytes::ByteBuf;
 

@@ -4,4 +4,7 @@
     "rust-analyzer.linkedProjects": [
         "./container/Cargo.toml"
     ],
+    "cSpell.words": [
+        "timedb"
+    ],
 }
