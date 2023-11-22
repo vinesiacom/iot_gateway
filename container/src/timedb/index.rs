@@ -20,11 +20,13 @@ impl Indexes {
     }
 
     // Function to add a new subindex
+    #[allow(dead_code)]
     fn add_subindex(&mut self, name: &str) {
         self.subindexes.insert(name.to_string(), BTreeMap::new());
     }
 
     // Function to add an object to a subindex
+    #[allow(dead_code)]
     fn add_to_subindex(&mut self, subindex_name: &str, key: String, object: Rc<Entry>) {
         let subindex = self
             .subindexes

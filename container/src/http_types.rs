@@ -21,6 +21,7 @@ impl HttpRequest {
 
     /// Searches for the first appearance of a parameter in the request URL.
     /// Returns `None` if the given parameter does not appear in the query.
+    #[allow(dead_code)]
     pub fn raw_query_param(&self, param: &str) -> Option<&str> {
         const QUERY_SEPARATOR: &str = "?";
         let query_string = self.url.split(QUERY_SEPARATOR).nth(1)?;
@@ -58,6 +59,7 @@ impl HttpResponseBuilder {
         })
     }
 
+    #[allow(dead_code)]
     pub fn bad_request() -> Self {
         Self(HttpResponse {
             status_code: 400,
@@ -74,6 +76,7 @@ impl HttpResponseBuilder {
         })
     }
 
+    #[allow(dead_code)]
     pub fn server_error(reason: impl ToString) -> Self {
         Self(HttpResponse {
             status_code: 500,
@@ -87,11 +90,13 @@ impl HttpResponseBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn body(mut self, bytes: impl Into<Vec<u8>>) -> Self {
         self.0.body = ByteBuf::from(bytes.into());
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_body_and_content_length(self, bytes: impl Into<Vec<u8>>) -> Self {
         let bytes = bytes.into();
         self.header("Content-Length", bytes.len()).body(bytes)

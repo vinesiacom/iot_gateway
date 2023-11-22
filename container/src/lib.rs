@@ -122,7 +122,7 @@ fn run_query(measurement: String, actions: Vec<Action>) -> Result<Vec<Entry>, St
 
 #[query]
 #[candid_method(query)]
-fn getSettings() -> Result<Settings, String> {
+fn get_settings() -> Result<Settings, String> {
     SETTINGS.with(|s| {
         let settings = s.borrow();
         Ok(settings.clone())
