@@ -3,3 +3,5 @@ target
 .dfx
 key.json
 .env
+influxdb_*
+test_helpers

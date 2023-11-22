@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "devenv": "dfx start --clean --background && dfx deploy",
+    "dfx:start": "dfx start --clean --background",
+    "dfx:stop": "dfx stop",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "cargo build --target wasm32-unknown-unknown --release"
+    "build": "cargo build --target wasm32-unknown-unknown --release",
+    "build:canister": "npm run dfx:start && dfx deploy --no-wallet  && npm run dfx:stop"
   },
   "author": "",
   "license": "ISC",

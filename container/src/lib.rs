@@ -1,6 +1,11 @@
+mod http_types;
+mod http;
+mod timedb;
+
 use candid::{export_service, candid_method, CandidType, Deserialize, Principal};
 use ic_cdk_macros::{update, query, init};
 use ic_cdk::api::time;
+use timedb::{TimeDb, Entry, Expression, Action, EntryCollection};
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -56,6 +61,9 @@ impl MessageStore {
 thread_local! {
     pub static IN_MESSAGES: Rc<RefCell<MessageStore>> =  Rc::new(RefCell::new(MessageStore::new()));
     pub static OUT_MESSAGES: Rc<RefCell<MessageStore>> =  Rc::new(RefCell::new(MessageStore::new()));
+    
+    pub static TIME_DB: Rc<RefCell<TimeDb>> = Rc::new(RefCell::new(TimeDb::new()));
+    
     pub static SETTINGS: Rc<RefCell<Settings>> =  Rc::new(RefCell::new(Settings {
         owner: Principal::anonymous(),
         interval: 1,
@@ -71,71 +79,33 @@ fn init() {
     });
 }
 
-
 #[update]
 #[candid_method(update)]
-fn onMessage(topic: String, message: String)-> Result<(), String> {
-    println!("{}: {}", topic, message);
+fn insert(measurement: String, entry: Entry) -> Result<(), String> {
+    TIME_DB.with(|m| {
+        let mut db = m.borrow_mut();
+        let timestamp = time() as u64;
 
-    IN_MESSAGES.with(|m| {
-        let mut messages = m.borrow_mut();
-        messages.add_message(&Message {
-            index: 0,
-            topic,
-            message: message.clone(),
-            timestamp: time() as u64,
-        });
-    });
-
-    OUT_MESSAGES.with(|m| {
-        let mut messages = m.borrow_mut();
-        messages.add_message(&Message {
-            index: 0,
-            topic: "/response".to_string(),
-            message,
-            timestamp: time() as u64,
-        });
+        let measurement = db.get_measurement(&measurement);
+        measurement.add_entry(timestamp, &entry.fields, &entry.tags);
     });
 
     Ok(())
 }
 
-#[query]
-#[candid_method(query)]
-fn getMessages(index: u64)-> Result<PagedResult, String> {
-    OUT_MESSAGES.with(|m| {
-        let messages = m.borrow();
-        let msgs = messages.get_messages();
 
-        //get all messages, skip fist index items
-        let msgs: Vec<Message>  = msgs.iter().skip(index as usize).take(100).cloned().collect();
-
-        Ok(PagedResult {
-            skip: index,
-            limit: 100,
-            data: msgs.clone(),
-            total: msgs.len() as u64
-        })
-    })
-}
 
 #[query]
 #[candid_method(query)]
-fn getInMessages(index: u64)-> Result<PagedResult, String> {
-    IN_MESSAGES.with(|m| {
-        let messages = m.borrow();
-        let msgs = messages.get_messages();
+fn run_query(measurement: String, actions: Vec<Action>) -> Result<Vec<Entry>, String> {
+    let items = TIME_DB.with(|m| {
+        let mut db = m.borrow_mut();
+        let measure = db.get_measurement(&measurement);
+        
+       measure.apply(&actions)
+    });
 
-        //get all messages, skip fist index items
-        let msgs: Vec<Message> = msgs.iter().skip(index as usize).take(100).cloned().collect();
-
-        Ok(PagedResult {
-            skip: index,
-            limit: 100,
-            data: msgs.clone(),
-            total: msgs.len() as u64
-        })
-    })
+    Ok(items)
 }
 
 #[query]
@@ -146,6 +116,8 @@ fn getSettings()-> Result<Settings, String> {
         Ok(settings.clone())
     })
 }
+
+use crate::http_types::*;
 
 #[query(name = "__get_candid_interface_tmp_hack")]
 fn export_candid() -> String {
