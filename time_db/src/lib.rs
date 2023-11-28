@@ -95,6 +95,22 @@ fn insert(measurement: String, entry: Entry) -> Result<(), String> {
     Ok(())
 }
 
+#[update]
+#[candid_method(update)]
+fn insert_bulk(measurement: String, entries: Vec<Entry>) -> Result<(), String> {
+    TIME_DB.with(|m| {
+        let mut db = m.borrow_mut();
+        let timestamp = time() as u64;
+
+        let measurement = db.get_measurement(&measurement);
+        for entry in entries {
+            measurement.add_entry(entry.timestamp, &entry.fields, &entry.tags);
+        }
+    });
+
+    Ok(())
+}
+
 #[query]
 #[candid_method(query)]
 fn run_query(measurement: String, actions: Vec<Action>) -> Result<Vec<Entry>, String> {

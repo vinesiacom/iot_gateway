@@ -37,6 +37,15 @@ impl Action {
                 let entries = indexes.values();
                 query_response.items = entries;
                 expression.filter(&mut query_response);
+
+                let mut filtered = Vec::new();
+                for entry in query_response.items {
+                    if expression.evaluate(&entry) {
+                        filtered.push(entry);
+                    }
+                }
+
+                query_response.items = filtered;
             }
             Action::AggregateWindow(aggregate_function, window_size_str) => {
                 let entries = indexes.values();
@@ -68,6 +77,15 @@ impl Action {
 
             Action::Filter(expression) => {
                 expression.filter(&mut output);
+
+                let mut filtered = Vec::new();
+                for entry in output.items {
+                    if expression.evaluate(&entry) {
+                        filtered.push(entry);
+                    }
+                }
+
+                output.items = filtered;
             }
             Action::AggregateWindow(aggregate_function, window_size_str) => {
                 output.items =
@@ -169,4 +187,34 @@ impl Action {
             _ => None,
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::timedb::test_helper::create_test_entries;
+
+    use super::*;
+
+    #[test]
+    fn test_range_action() {
+        let entries = create_test_entries();
+
+        let mut indexes = Indexes::new();
+        for entry in entries {
+            indexes.insert(entry.timestamp, entry);
+        }
+
+        let start = 1625230000;
+        let range = 3*30*24*60*60;
+        let end = start + range;
+
+        let action = Action::Range(start, Some(end));
+        let query_response = action.init(&indexes).unwrap();
+
+        for entry in query_response.items {
+            assert!(entry.timestamp >= start && entry.timestamp <= end);
+        }
+    }
+
+    // Additional test cases for Filter, AggregateWindow, etc...
 }

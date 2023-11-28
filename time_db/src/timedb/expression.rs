@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, rc::Rc};
 
 use candid::CandidType;
 use serde::Deserialize;
@@ -10,13 +10,6 @@ use super::{
 
 #[derive(Clone, CandidType, Deserialize)]
 pub enum Expression {
-    // TimestampEq(u64),
-    // TimestampGt(u64),
-    // TimestampLt(u64),
-    // FieldEq(String, String),
-    // FieldContainsKey(String),
-    // TagEq(String, String),
-    // TagContainsKey(String),
     Eq(String, Value), // Field or tag name, Equal
     Gt(String, Value), // Field or tag name, Greater than
     Lt(String, Value), // Field or tag name, Lower than
@@ -32,12 +25,9 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn evaluate(&self, entry: &Entry) -> bool {
+    pub fn evaluate(&self, entry: &Rc<Entry>) -> bool {
         match self {
-            Expression::Eq(field, expected_value) => entry
-                .fields
-                .get(field)
-                .map_or(false, |v| v == expected_value),
+        Expression::Eq(field, expected_value) => entry.get_value(field).map_or(false, |v| v == expected_value),
             Expression::Gt(field, expected_value) => {
                 let val = entry.get_value(field);
                 match val {
@@ -69,24 +59,9 @@ impl Expression {
 
             Expression::TagFilter(_) => true,
             Expression::FieldFilter(_) => true,
-            // ... other cases ...
-            // Expression::TagFilter(keep_tags) => {
-            //     // Logic for TagFilter
-            // },
-            // Expression::FieldFilter(keep_fields) => {
-            //     // Logic for FieldFilter
-            // },
-            // Expression::TimestampEq(val) => entry.timestamp == *val,
-            // Expression::TimestampGt(val) => entry.timestamp > *val,
-            // Expression::TimestampLt(val) => entry.timestamp < *val,
-            // Expression::FieldEq(key, val) => entry.fields.get(key).map_or(false, |v| v == val),
-            // Expression::FieldContainsKey(key) => entry.fields.contains_key(key),
-            // Expression::TagEq(key, val) => entry.tags.get(key).map_or(false, |v| v == val),
-            // Expression::TagContainsKey(key) => entry.tags.contains_key(key),
             Expression::And(left, right) => left.evaluate(entry) && right.evaluate(entry),
             Expression::Or(left, right) => left.evaluate(entry) || right.evaluate(entry),
             Expression::Not(val) => !val.evaluate(entry),
-            // _ => true,
         }
     }
 
@@ -155,4 +130,80 @@ impl Expression {
             _ => false,
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{collections::HashMap, rc::Rc};
+
+    use super::*;
+
+    #[test]
+    fn test_eq_expression() {
+        let entry = Rc::new(Entry {
+            timestamp: 123456,
+            fields: HashMap::from([
+                ("temperature".to_string(), Value::Int(25)),
+                // ... other fields ...
+            ]),
+            tags: HashMap::new(),
+        });
+
+        let expr = Expression::Eq("temperature".to_string(), Value::Int(25));
+        assert!(expr.evaluate(&entry));
+
+        let expr_not_equal = Expression::Eq("temperature".to_string(), Value::Int(30));
+        assert!(!expr_not_equal.evaluate(&entry));
+    }
+
+    #[test]
+    fn test_gt_expression() {
+        let entry = Rc::new(Entry {
+            timestamp: 123456,
+            fields: HashMap::from([
+                ("temperature".to_string(), Value::Int(25)),
+                ("temperature_f".to_string(), Value::Float(25.0)),
+                // ... other fields ...
+            ]),
+            tags: HashMap::new(),
+        });
+
+        let expr_int = Expression::Gt("temperature".to_string(), Value::Int(24));
+        assert!(expr_int.evaluate(&entry));
+
+        let expr_float = Expression::Gt("temperature".to_string(), Value::Float(24.0));
+        assert!(expr_float.evaluate(&entry));
+
+        let expr_int_2 = Expression::Gt("temperature_f".to_string(), Value::Int(24));
+        assert!(expr_int_2.evaluate(&entry));
+
+        let expr_float_2 = Expression::Gt("temperature_f".to_string(), Value::Float(24.0));
+        assert!(expr_float_2.evaluate(&entry));
+
+        let expr_not_equal = Expression::Eq("temperature".to_string(), Value::Int(30));
+        assert!(!expr_not_equal.evaluate(&entry));
+    }
+
+
+    #[test]
+    fn test_tag_filter() {
+        let entry = Entry {
+            timestamp: 123456,
+            fields: HashMap::from([
+                ("temperature".to_string(), Value::Int(25)),
+                ("temperature_f".to_string(), Value::Float(25.0)),
+                // ... other fields ...
+            ]),
+            tags: HashMap::new(),
+        };
+
+        let mut query_response = QueryResponse::new();
+        query_response.items = vec![Rc::new(entry)];
+
+        let tag_filter = Expression::TagFilter(vec!["temperature".to_string()]);
+        tag_filter.filter(&mut query_response);
+
+        assert_eq!(query_response.tags.len(), 1);
+    }
+    // Additional test cases...
 }

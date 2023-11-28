@@ -85,21 +85,20 @@ impl HttpResponseBuilder {
         })
     }
 
-    pub fn header(mut self, name: impl ToString, value: impl ToString) -> Self {
+    pub fn header(&mut self, name: impl ToString, value: impl ToString) {
         self.0.headers.push((name.to_string(), value.to_string()));
-        self
     }
 
     #[allow(dead_code)]
-    pub fn body(mut self, bytes: impl Into<Vec<u8>>) -> Self {
+    pub fn body(&mut self, bytes: impl Into<Vec<u8>>) {
         self.0.body = ByteBuf::from(bytes.into());
-        self
     }
 
     #[allow(dead_code)]
-    pub fn with_body_and_content_length(self, bytes: impl Into<Vec<u8>>) -> Self {
+    pub fn with_body_and_content_length(&mut self, bytes: impl Into<Vec<u8>>) {
         let bytes = bytes.into();
-        self.header("Content-Length", bytes.len()).body(bytes)
+        self.header("Content-Length", bytes.len());
+        self.body(bytes);
     }
 
     pub fn build(self) -> HttpResponse {

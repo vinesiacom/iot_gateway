@@ -2,7 +2,7 @@
     "mochaExplorer.files": "test/**/*.ts",
     "mochaExplorer.require": "ts-node/register",
     "rust-analyzer.linkedProjects": [
-        "./container/Cargo.toml"
+        "./time_db/Cargo.toml"
     ],
     "cSpell.words": [
         "timedb"

@@ -2,8 +2,8 @@
     "canisters": {
       "storage": {
         "build": "./build.sh",
-        "candid": "container/src/mqtt.did",
-        "wasm": "target/wasm32-unknown-unknown/release/mqtt.wasm",
+        "candid": "time_db/src/time_db.did",
+        "wasm": "target/wasm32-unknown-unknown/release/time_db.wasm",
         "type": "custom",
         "node_compatibility": true,
         "env_override": ""

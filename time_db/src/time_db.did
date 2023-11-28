@@ -5,22 +5,21 @@ type Action = variant {
 };
 type AggregateFunction = variant { Max; Min; Sum; Mean };
 type Entry = record {
-  tags : vec record { text; text };
-  fields : vec record { text; text };
+  tags : vec record { text; Value };
+  fields : vec record { text; Value };
   timestamp : nat64;
 };
 type Expression = variant {
+  Eq : record { text; Value };
+  Ge : record { text; Value };
+  Gt : record { text; Value };
+  Le : record { text; Value };
+  Lt : record { text; Value };
   Or : record { Expression; Expression };
   And : record { Expression; Expression };
+  Not : Expression;
   TagFilter : vec text;
   FieldFilter : vec text;
-  FieldContainsKey : text;
-  TagEq : record { text; text };
-  TimestampEq : nat64;
-  TimestampGt : nat64;
-  TimestampLt : nat64;
-  FieldEq : record { text; text };
-  TagContainsKey : text;
 };
 type HttpRequest = record {
   url : text;
@@ -37,9 +36,18 @@ type Result = variant { Ok : Settings; Err : text };
 type Result_1 = variant { Ok; Err : text };
 type Result_2 = variant { Ok : vec Entry; Err : text };
 type Settings = record { interval : nat64; owner : principal };
+type Value = variant {
+  Int : int;
+  Bool : bool;
+  None;
+  UInt : nat;
+  String : text;
+  Float : float32;
+};
 service : () -> {
-  getSettings : () -> (Result) query;
+  get_settings : () -> (Result) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
   insert : (text, Entry) -> (Result_1);
+  insert_bulk : (text, vec Entry) -> (Result_1);
   run_query : (text, vec Action) -> (Result_2) query;
 }
